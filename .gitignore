@@ -1,0 +1,12 @@
+# MacOS
+.DS_Store
+
+# Dependencias
+node_modules/
+
+# Aplicaciones / archivos temporales
+*.log
+*.tmp
+*.swp
+.vercel
+.vscode/
