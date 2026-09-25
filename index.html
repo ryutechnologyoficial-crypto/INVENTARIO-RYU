@@ -1263,11 +1263,11 @@
                         <form onSubmit={handleLogin} className="ryuu-login__form">
                             <div className="ryuu-field">
                                 <label className="ryuu-label" htmlFor="login-email">Usuario</label>
-                                <input name="email" id="login-email" type="text" defaultValue="RYU" required className="ryuu-input ryuu-input--lg" />
+                                <input name="email" id="login-email" type="text" required className="ryuu-input ryuu-input--lg" />
                             </div>
                             <div className="ryuu-field">
                                 <label className="ryuu-label" htmlFor="login-password">Contraseña</label>
-                                <input name="password" id="login-password" type="password" defaultValue="1234" required className="ryuu-input ryuu-input--lg" />
+                                <input name="password" id="login-password" type="password" required className="ryuu-input ryuu-input--lg" />
                             </div>
                             <button type="submit" disabled={loading} className="ryuu-btn ryuu-btn--gold ryuu-btn--block ryuu-btn--lg">
                                 {loading ? 'Entrando...' : 'Entrar al Sistema'}
