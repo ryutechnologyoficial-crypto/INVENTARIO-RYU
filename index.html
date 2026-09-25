@@ -1315,6 +1315,7 @@
                                 <NavItem active={tab === 'celulares'} onClick={() => setTab('celulares')} icon="celulares" label="Inventario Celulares" />
                                 <NavItem active={tab === 'accesorios'} onClick={() => setTab('accesorios')} icon="accesorios" label="Accesorios" />
                                 <NavItem active={tab === 'ventas'} onClick={() => setTab('ventas')} icon="rentabilidad" label="Ventas" />
+                                <NavItem active={tab === 'retoma'} onClick={() => setTab('retoma')} icon="retoma" label="Referencia de Retoma" />
                                 {esAdmin && <NavItem active={tab === 'config'} onClick={() => setTab('config')} icon="config" label="Configuración / TRM" />}
                                 {esAdmin && <NavItem active={tab === 'empleados'} onClick={() => setTab('empleados')} icon="usuarios" label="Usuarios" />}
                             </nav>
@@ -1343,6 +1344,7 @@
                                     {tab === 'registrar' && 'Registrar Venta'}
                                     {tab === 'accesorios' && 'Inventario de Accesorios'}
                                     {tab === 'ventas' && 'Ventas'}
+                                    {tab === 'retoma' && 'Referencia de Retoma'}
                                     {tab === 'config' && 'Configuración y Modelos'}
                                     {tab === 'empleados' && 'Gestión de Usuarios'}
                                 </h2>
@@ -1372,6 +1374,7 @@
                         {tab === 'celulares' && <VistaCelulares unidades={unidades} modelos={modelos} esAdmin={esAdmin} callGAS={callGAS} onUpdate={loadAllData} />}
                         {tab === 'accesorios' && <VistaAccesorios accesorios={accesorios} esAdmin={esAdmin} callGAS={callGAS} onUpdate={loadAllData} />}
                         {tab === 'ventas' && <VistaVentas ventas={ventas} unidades={unidades} modelos={modelos} accesorios={accesorios} esAdmin={esAdmin} callGAS={callGAS} onUpdate={loadAllData} />}
+                        {tab === 'retoma' && <VistaRetoma retomas={retomas} modelos={modelos} esAdmin={esAdmin} callGAS={callGAS} onUpdate={loadAllData} />}
                         {tab === 'config' && esAdmin && <VistaConfig configuracion={configuracion} modelos={modelos} retomas={retomas} callGAS={callGAS} onUpdate={loadAllData} />}
                         {tab === 'empleados' && esAdmin && <VistaEmpleados usuarios={usuarios} callGAS={callGAS} onUpdate={loadAllData} />}
                     </main>
@@ -2009,6 +2012,7 @@
                 calendario: (<><rect x="3" y="4.5" width="18" height="17" rx="2.5" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="8" y1="2.5" x2="8" y2="6" /><line x1="16" y1="2.5" x2="16" y2="6" /></>),
                 meta: (<><path d="M6.5 3h11l4 6.5L12 21 2.5 9.5 6.5 3z" /><path d="M2.5 9.5h19" /><path d="M12 21L8 9.5 12 3l4 6.5L12 21" /></>),
                 rentabilidad: (<><path d="M3 3v18h18" /><path d="M7 14.5l4-5 3 3 5-7" /></>),
+                retoma: (<><path d="M20.6 13.4 12 22l-8.6-8.6L3.2 10V3.2H10l.6.6z" /><circle cx="7.4" cy="7.4" r="1.5" /></>),
                 sheet: (<><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="9" x2="9" y2="21" /><line x1="15" y1="9" x2="15" y2="21" /></>)
             };
             return (
@@ -3465,6 +3469,337 @@
                             <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700">Guardar Referencia</button>
                         </form>
                     </div>
+                </div>
+            );
+        }
+
+        // ==========================================
+        // VISTA 5.5: REFERENCIA DE RETOMA
+        // ==========================================
+        function VistaRetoma({ retomas, modelos, esAdmin, callGAS, onUpdate }) {
+            const [busqueda, setBusqueda] = useState('');
+            const [editTarget, setEditTarget] = useState(null);
+            const [editModelo, setEditModelo] = useState('');
+            const [editCap, setEditCap] = useState('');
+            const [editGradeA, setEditGradeA] = useState('');
+            const [editGradeB, setEditGradeB] = useState('');
+            const [editLoading, setEditLoading] = useState(false);
+            const [editError, setEditError] = useState('');
+            const [showAdd, setShowAdd] = useState(false);
+            const [addLoading, setAddLoading] = useState(false);
+            const [addError, setAddError] = useState('');
+            const [addOk, setAddOk] = useState('');
+            const [addModelo, setAddModelo] = useState('');
+            const [semLoading, setSemLoading] = useState(false);
+            const [semError, setSemError] = useState('');
+            const [semOk, setSemOk] = useState('');
+
+            const nombreModelo = (id) => {
+                const base = (modelos || []).find(m => String(m.id) === String(id));
+                return base ? base.nombre : String(id);
+            };
+
+            const fmtCapacidad = (cap) => {
+                const c = String(cap == null || cap === undefined ? '' : cap).trim();
+                if (c === '' || c === '0') return '—';
+                if (String(c).replace(/\./g, '') === '1024') return '1 TB';
+                return c + ' GB';
+            };
+
+            const nfMiles = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            const fmtRetoma = (v) => {
+                const n = Number(v);
+                if (!isFinite(n)) return null;
+                const signo = n < 0 ? '-' : '';
+                const abs = Math.abs(n);
+                if (abs < 1000) return signo + '$' + abs.toFixed(2);
+                return signo + '$' + nfMiles.format(abs);
+            };
+
+            const grupos = [];
+            (retomas || []).forEach(r => {
+                const gNorm = String(r.grado || '').trim().toUpperCase();
+                if (gNorm !== 'A' && gNorm !== 'B') return;
+                const precio = (r.precio_compra_cop === '' || r.precio_compra_cop === null || r.precio_compra_cop === undefined) ? null : Number(r.precio_compra_cop);
+                let grupo = grupos.find(x =>
+                    String(x.modelo_id) === String(r.modelo_id) &&
+                    String(x.capacidad) === String(r.capacidad) &&
+                    (!x.grados[gNorm] || Number(x.grados[gNorm].precio_compra_cop) === precio)
+                );
+                if (!grupo) {
+                    grupo = { modelo_id: r.modelo_id, capacidad: r.capacidad, grados: { A: null, B: null } };
+                    grupos.push(grupo);
+                }
+                grupo.grados[gNorm] = r;
+            });
+
+            let filasTabla = grupos;
+            const q = normalizarBusqueda(busqueda);
+            if (q) filasTabla = filasTabla.filter(gr => normalizarBusqueda(nombreModelo(gr.modelo_id) + ' ' + String(gr.capacidad)).includes(q));
+
+            const abrirEditar = (gr) => {
+                setEditTarget(gr);
+                const modeloSel = (modelos || []).find(m => String(m.id) === String(gr.modelo_id))
+                    || (modelos || []).find(m => String(m.nombre).trim().toUpperCase() === String(gr.modelo_id).trim().toUpperCase());
+                setEditModelo(modeloSel ? String(modeloSel.id) : String(gr.modelo_id));
+                setEditCap(gr.capacidad || '');
+                setEditGradeA(gr.grados.A ? String(gr.grados.A.precio_compra_cop) : '');
+                setEditGradeB(gr.grados.B ? String(gr.grados.B.precio_compra_cop) : '');
+                setEditError('');
+            };
+
+            const guardarEdicion = async (e) => {
+                e.preventDefault();
+                setEditLoading(true);
+                setEditError('');
+                try {
+                    const cap = String(editCap || '').trim();
+                    if (!cap) throw new Error('Escribe la capacidad.');
+                    for (const grado of ['A', 'B']) {
+                        const valor = grado === 'A' ? editGradeA : editGradeB;
+                        const row = editTarget.grados[grado];
+                        if (valor === '' || valor === null || valor === undefined) continue;
+                        if (row) {
+                            await callGAS('editarReferenciaRetoma', {
+                                id: row.id,
+                                modelo_id: editModelo,
+                                capacidad: cap,
+                                grado,
+                                precio_compra_usd: row.precio_compra_usd,
+                                precio_compra_cop: Number(valor),
+                                precio_venta_usd: row.precio_venta_usd,
+                                precio_venta_cop: row.precio_venta_cop
+                            });
+                        } else {
+                            await callGAS('agregarReferenciaRetoma', {
+                                modelo_id: editModelo,
+                                capacidad: cap,
+                                grado,
+                                precio_compra_usd: '',
+                                precio_compra_cop: Number(valor),
+                                precio_venta_usd: '',
+                                precio_venta_cop: ''
+                            });
+                        }
+                    }
+                    setEditTarget(null);
+                    onUpdate();
+                } catch (err) {
+                    setEditError(err.message || 'No se pudo guardar la edición.');
+                } finally {
+                    setEditLoading(false);
+                }
+            };
+
+            const guardarNueva = async (e) => {
+                e.preventDefault();
+                setAddLoading(true);
+                setAddError('');
+                try {
+                    const cap = String(e.target.capacidad.value || '').trim();
+                    const ga = e.target.gradoA.value;
+                    const gb = e.target.gradoB.value;
+                    if (!addModelo) throw new Error('Selecciona el modelo.');
+                    if (!cap) throw new Error('Escribe la capacidad.');
+                    const existenDuplicados = (retomas || []).some(r => String(r.modelo_id) === String(addModelo) && String(r.capacidad).trim().toUpperCase() === cap.toUpperCase());
+                    if (ga === '' && gb === '') throw new Error('Escribe al menos un precio (Grado A o Grado B).');
+                    for (const [grado, valor] of [['A', ga], ['B', gb]]) {
+                        if (valor === '') continue;
+                        await callGAS('agregarReferenciaRetoma', {
+                            modelo_id: addModelo,
+                            capacidad: cap,
+                            grado,
+                            precio_compra_usd: '',
+                            precio_compra_cop: Number(valor),
+                            precio_venta_usd: '',
+                            precio_venta_cop: ''
+                        });
+                    }
+                    setShowAdd(false);
+                    setAddModelo('');
+                    setAddOk(existenDuplicados ? 'Referencia guardada. Ya existía ese modelo+capacidad; se muestra como fila aparte y no se borró la anterior.' : 'Referencia guardada correctamente.');
+                    e.target.reset();
+                    onUpdate();
+                } catch (err) {
+                    setAddError(err.message || 'No se pudo guardar la referencia.');
+                } finally {
+                    setAddLoading(false);
+                }
+            };
+
+            const libres = (modelos || []).slice().sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
+
+            const sembrar = async () => {
+                setSemLoading(true);
+                setSemError('');
+                setSemOk('');
+                try {
+                    const r = await callGAS('sembrarCatalogo');
+                    const d = (r && r.data) ? r.data : {};
+                    setSemOk('Catálogo listo: ' + (d.referencia_retoma || 0) + ' referencias nuevas, ' + (d.modelos_celular || 0) + ' modelos creados.');
+                    onUpdate();
+                } catch (err) {
+                    setSemError(err.message || 'No se pudo sembrar. Verifica que el backend esté actualizado.')
+                } finally {
+                    setSemLoading(false);
+                }
+            };
+
+            return (
+                <div className="ryuu-card ryuu-panel">
+                    <div className="ryuu-panel__head">
+                        <span className="ryuu-panel__title">
+                            <RYUIcon name="retoma" className="ryuu-panel__ico" /> Referencia de Retoma
+                        </span>
+                        <span className="ryuu-pill ryuu-pill--gold">{filasTabla.length} referencia(s)</span>
+                    </div>
+
+                    <div className="ryuu-inv__toolbar">
+                        <div className="ryuu-search ryuu-search--big">
+                            <svg className="ryuu-search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="11" cy="11" r="7" />
+                                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                            </svg>
+                            <input
+                                type="text"
+                                value={busqueda}
+                                onChange={e => setBusqueda(e.target.value)}
+                                placeholder="Buscar por modelo o capacidad… ej. iPhone 13, 256, Galaxy…"
+                                className="ryuu-search__input"
+                            />
+                            {busqueda && (
+                                <button className="ryuu-search__clear" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda">×</button>
+                            )}
+                        </div>
+                        {esAdmin && (
+                            <button onClick={sembrar} disabled={semLoading} className="ryuu-btn ryuu-btn--ghost" title="Carga el catálogo inicial en la hoja ReferenciaRetoma">
+                                {semLoading ? 'Sembrando…' : 'Sembrar catálogo'}
+                            </button>
+                        )}
+                        {esAdmin && (
+                            <button onClick={() => { setShowAdd(true); setAddError(''); setAddOk(''); }} className="ryuu-btn ryuu-btn--gold">
+                                + Agregar Referencia
+                            </button>
+                        )}
+                    </div>
+
+                    {semError && <div className="ryuu-alert ryuu-alert--error" style={{ marginBottom: 12 }}>⚠️ {semError}</div>}
+                    {semOk && <div style={{ marginBottom: 12, background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.45)', color: '#e5c95c', borderRadius: 12, padding: '10px 14px', fontSize: 13 }}>✅ {semOk}</div>}
+                    {addOk && <div className="ryuu-alert ryuu-alert--ok" style={{ marginBottom: 12 }}>✅ {addOk}</div>}
+
+                    <div className="overflow-x-auto">
+                        <table className="ryuu-table">
+                            <thead>
+                                <tr>
+                                    <th>Modelo</th>
+                                    <th>Capacidad</th>
+                                    <th className="ryuu-tright">Grado A</th>
+                                    <th className="ryuu-tright">Grado B</th>
+                                    {esAdmin && <th>Acciones</th>}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filasTabla.map((gr, i) => (
+                                    <tr key={i}>
+                                        <td className="font-semibold">{nombreModelo(gr.modelo_id)}</td>
+                                        <td>{fmtCapacidad(gr.capacidad)}</td>
+                                        <td className="ryuu-num ryuu-num--green ryuu-tright">{gr.grados.A && gr.grados.A.precio_compra_cop !== '' && gr.grados.A.precio_compra_cop !== undefined && gr.grados.A.precio_compra_cop !== null ? fmtRetoma(gr.grados.A.precio_compra_cop) : <span className="ryuu-cell-muted">—</span>}</td>
+                                        <td className="ryuu-num ryuu-tright">{gr.grados.B && gr.grados.B.precio_compra_cop !== '' && gr.grados.B.precio_compra_cop !== undefined && gr.grados.B.precio_compra_cop !== null ? fmtRetoma(gr.grados.B.precio_compra_cop) : <span className="ryuu-cell-muted">—</span>}</td>
+                                        {esAdmin && (
+                                            <td>
+                                                <button onClick={() => abrirEditar(gr)} className="ryuu-btn ryuu-btn--xs ryuu-btn--edit">Editar</button>
+                                            </td>
+                                        )}
+                                    </tr>
+                                ))}
+                                {filasTabla.length === 0 && (
+                                    <tr>
+                                        <td colSpan={esAdmin ? 5 : 4} className="ryuu-cell-muted ryuu-tcenter">
+                                            {q ? 'No hay referencias que coincidan con la búsqueda.' : 'No hay referencias en la hoja ReferenciaRetoma. Si eres admin, usa el botón "Sembrar catálogo" para cargar el catálogo inicial.'}
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {editTarget && (
+                        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+                            <div className="ryuu-modal-card">
+                                <h3 className="ryuu-modal-title">Editar Referencia</h3>
+                                <p className="ryuu-modal-sub">Modifica Modelo, Capacidad o los precios. Se actualiza sobre los registros existentes (sin duplicar).</p>
+                                {editError && <div className="ryuu-alert ryuu-alert--error">{editError}</div>}
+                                <form onSubmit={guardarEdicion} className="space-y-3 mt-3">
+                                    <div className="ryuu-field">
+                                        <label className="ryuu-label">Modelo</label>
+                                        <select value={editModelo} onChange={e => setEditModelo(e.target.value)} className="ryuu-select">
+                                            <option value="">-- Selecciona un modelo --</option>
+                                            {libres.map(m => (
+                                                <option key={m.id} value={m.id}>{m.nombre}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="ryuu-field">
+                                        <label className="ryuu-label">Capacidad</label>
+                                        <input type="text" value={editCap} onChange={e => setEditCap(e.target.value)} required className="ryuu-input" />
+                                    </div>
+                                    <div className="ryuu-perdida-grid">
+                                        <div className="ryuu-field">
+                                            <label className="ryuu-label">Precio Grado A (COP)</label>
+                                            <input type="number" value={editGradeA} onChange={e => setEditGradeA(e.target.value)} className="ryuu-input" />
+                                        </div>
+                                        <div className="ryuu-field">
+                                            <label className="ryuu-label">Precio Grado B (COP)</label>
+                                            <input type="number" value={editGradeB} onChange={e => setEditGradeB(e.target.value)} className="ryuu-input" />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end space-x-2 pt-2">
+                                        <button type="button" onClick={() => setEditTarget(null)} className="ryuu-btn ryuu-btn--ghost">Cancelar</button>
+                                        <button type="submit" disabled={editLoading} className="ryuu-btn ryuu-btn--gold">{editLoading ? 'Guardando…' : 'Guardar'}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {showAdd && (
+                        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+                            <div className="ryuu-modal-card">
+                                <h3 className="ryuu-modal-title">Agregar Referencia</h3>
+                                <p className="ryuu-modal-sub">Crea una referencia nueva en la hoja ReferenciaRetoma.</p>
+                                {addError && <div className="ryuu-alert ryuu-alert--error">{addError}</div>}
+                                <form onSubmit={guardarNueva} className="space-y-3 mt-3">
+                                    <div className="ryuu-field">
+                                        <label className="ryuu-label">Modelo</label>
+                                        <select value={addModelo} onChange={e => setAddModelo(e.target.value)} required className="ryuu-select">
+                                            <option value="">-- Selecciona un modelo --</option>
+                                            {libres.map(m => (
+                                                <option key={m.id} value={m.id}>{m.nombre}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="ryuu-field">
+                                        <label className="ryuu-label">Capacidad</label>
+                                        <input name="capacidad" type="text" required placeholder="Ej. 128, 512, 1.024 (se muestra 128 GB / 1 TB)" className="ryuu-input" />
+                                    </div>
+                                    <div className="ryuu-perdida-grid">
+                                        <div className="ryuu-field">
+                                            <label className="ryuu-label">Precio Grado A (COP)</label>
+                                            <input name="gradoA" type="number" placeholder="Ej. 900000" className="ryuu-input" />
+                                        </div>
+                                        <div className="ryuu-field">
+                                            <label className="ryuu-label">Precio Grado B (COP)</label>
+                                            <input name="gradoB" type="number" placeholder="Ej. 810000" className="ryuu-input" />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end space-x-2 pt-2">
+                                        <button type="button" onClick={() => setShowAdd(false)} className="ryuu-btn ryuu-btn--ghost">Cancelar</button>
+                                        <button type="submit" disabled={addLoading} className="ryuu-btn ryuu-btn--gold">{addLoading ? 'Guardando…' : 'Guardar'}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
