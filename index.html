@@ -249,6 +249,8 @@
         .ryuu-login__subtitle { margin: 6px 0 24px; font-size: 0.82rem; color: var(--ryuu-muted); }
         .ryuu-login__form { display: flex; flex-direction: column; gap: 16px; }
         .ryuu-login__foot { position: relative; z-index: 1; margin-top: 18px; font-size: 0.68rem; color: rgba(255,255,255,0.55); letter-spacing: 0.12em; text-transform: uppercase; text-align: center; }
+        .ryuu-login__remember { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--ryuu-muted); user-select: none; cursor: pointer; }
+        .ryuu-login__remember input { accent-color: #d4af37; width: 15px; height: 15px; cursor: pointer; }
 
         @media (max-width: 480px) {
             .ryuu-login__card { padding: 30px 24px 26px; }
@@ -1144,12 +1146,20 @@
 
         // Lee la sesión guardada, pero solo la acepta si tiene un id válido,
         // para evitar llamadas automáticas al backend sin autenticación real.
+        // Cada navegador/dispositivo maneja su propia sesión local: puede venir
+        // de localStorage ("Recordarme" activo) o de sessionStorage (por pestaña).
+        const SESION_KEY = 'gas_session';
+        const storesSesion = [localStorage, sessionStorage];
         function leerSesionGuardada() {
-            try {
-                const stored = JSON.parse(localStorage.getItem('gas_session') || 'null');
-                if (stored && stored.id) return stored;
-            } catch (e) {}
-            localStorage.removeItem('gas_session');
+            for (const store of storesSesion) {
+                try {
+                    const stored = JSON.parse(store.getItem(SESION_KEY) || 'null');
+                    if (stored && stored.id) return stored;
+                } catch (e) {}
+            }
+            for (const store of storesSesion) {
+                try { store.removeItem(SESION_KEY); } catch (e) {}
+            }
             return null;
         }
 
@@ -1239,7 +1249,21 @@
                     // El backend devuelve el usuario directamente (no envuelto en "usuario")
                     const usuario = await callGAS('login', { email, password });
                     setSession(usuario);
-                    localStorage.setItem('gas_session', JSON.stringify(usuario));
+                    // "Recordarme" activo -> localStorage (persiste al abrir de nuevo);
+                    // desactivado -> sessionStorage (se pide credencial al cerrar la pestaña).
+                    // Nunca se guarda la contraseña: solo {id, email, nombre, rol}.
+                    const recordar = !e.target.elements.remember || e.target.elements.remember.checked;
+                    try {
+                        if (recordar) {
+                            localStorage.setItem(SESION_KEY, JSON.stringify(usuario));
+                            sessionStorage.removeItem(SESION_KEY);
+                        } else {
+                            sessionStorage.setItem(SESION_KEY, JSON.stringify(usuario));
+                            localStorage.removeItem(SESION_KEY);
+                        }
+                    } catch (err) {
+                        console.warn('No se pudo guardar la sesión local:', err);
+                    }
                 } catch (err) {
                     setAuthError(err.message || 'Error al iniciar sesión');
                 } finally {
@@ -1249,7 +1273,9 @@
 
             const handleLogout = () => {
                 setSession(null);
-                localStorage.removeItem('gas_session');
+                for (const store of storesSesion) {
+                    try { store.removeItem(SESION_KEY); } catch (e) {}
+                }
             };
 
             if (!session) {
@@ -1269,6 +1295,10 @@
                                 <label className="ryuu-label" htmlFor="login-password">Contraseña</label>
                                 <input name="password" id="login-password" type="password" required className="ryuu-input ryuu-input--lg" />
                             </div>
+                            <label className="ryuu-login__remember">
+                                <input name="remember" type="checkbox" defaultChecked />
+                                <span>Recordarme en este dispositivo</span>
+                            </label>
                             <button type="submit" disabled={loading} className="ryuu-btn ryuu-btn--gold ryuu-btn--block ryuu-btn--lg">
                                 {loading ? 'Entrando...' : 'Entrar al Sistema'}
                             </button>
