@@ -1126,6 +1126,120 @@
         .ryuu-chart-wrap { position: relative; height: 300px; margin-top: 10px; }
         .ryuu-chart-msg { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--ryuu-muted); font-size: 0.85rem; text-align: center; padding: 16px; pointer-events: none; }
         .ryuu-chart-msg .ryuu-chart-ico { width: 42px; height: 42px; color: var(--ryuu-gold); opacity: 0.65; }
+
+        /* ---------- Punto de color del equipo ---------- */
+        .ryuu-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; box-shadow: 0 0 0 1px rgba(255,255,255,0.22) inset, 0 0 6px rgba(0,0,0,0.35); }
+
+        /* ---------- Ficha del equipo seleccionado en Vender ---------- */
+        .ryuu-picked { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: rgba(212,175,55,0.07); border: 1px solid rgba(212,175,55,0.24); border-radius: 12px; padding: 10px 12px; }
+        .ryuu-picked__ico { width: 18px; height: 18px; color: var(--ryuu-gold); flex: 0 0 auto; }
+        .ryuu-picked__txt { font-size: 0.82rem; font-weight: 600; color: var(--ryuu-text); min-width: 0; word-break: break-word; }
+        .ryuu-picked__bar { width: 100%; height: 3px; border-radius: 3px; background: linear-gradient(90deg, var(--ryuu-gold), rgba(212,175,55,0.15)); }
+
+        /* ---------- Inventario de celulares: filas planas y a todo el ancho ----------
+           El diseño base usaba celdas de ancho fijo (flex: 0 0 Npx) que suman
+           ~1160px; con la barra lateral eso no cabía y overflow:hidden recortaba
+           la fila. Aquí las celdas se reparten el ancho disponible, se quedan en
+           una sola linea y las acciones se van al extremo derecho, dejando que
+           el equipo ocupe el espacio que sobra. */
+        .ryuu-list--flat { gap: 0; background: var(--ryuu-card, #131313); border: 1px solid var(--ryuu-line, rgba(212,175,55,0.26)); border-radius: var(--ryuu-radius, 16px); overflow: hidden; }
+
+        @media (min-width: 861px) {
+            .ryuu-item {
+                flex-wrap: nowrap;
+                padding: 11px 16px;
+                background: transparent;
+                border: 0;
+                border-bottom: 1px solid var(--ryuu-line, rgba(212,175,55,0.26));
+                border-radius: 0;
+                box-shadow: none;
+            }
+            .ryuu-item:last-child { border-bottom: 0; }
+            .ryuu-item:hover { background: rgba(212,175,55,0.055); border-color: transparent; box-shadow: none; }
+
+            .ryuu-item-head {
+                padding: 10px 16px;
+                height: auto;
+                background: rgba(212,175,55,0.05);
+                border-bottom: 1px solid var(--ryuu-line, rgba(212,175,55,0.26));
+            }
+
+            .ryuu-item__equipo { flex: 3 1 190px; min-width: 0; }
+            .ryuu-item__imei { flex: 1 1 112px; min-width: 0; }
+            .ryuu-item__batt { flex: 1 1 92px; min-width: 0; }
+            .ryuu-item__costo { flex: 1 1 96px; min-width: 0; }
+            .ryuu-item__precio { flex: 1 1 102px; min-width: 0; }
+            .ryuu-item__util { flex: 0 1 78px; min-width: 0; }
+            .ryuu-item__estado { flex: 0 1 96px; min-width: 0; }
+            /* margin-left:auto empuja los botones al extremo derecho. */
+            .ryuu-item__acciones { flex: 0 0 auto; margin-left: auto; justify-content: flex-end; gap: 5px; }
+            /* Botones mas compactos: asi la fila completa cabe en una sola linea
+               hasta ~1180px en vez de partirse. */
+            .ryuu-item__acciones .ryuu-btn--xs { padding: 6px 10px; font-size: 0.72rem; }
+            .ryuu-item, .ryuu-item-head { gap: 12px; }
+
+            .ryuu-item__model { white-space: normal; overflow-wrap: anywhere; }
+            .ryuu-item__imei { overflow-wrap: anywhere; word-break: break-all; }
+            .ryuu-item__costo .v, .ryuu-item__precio .v { white-space: normal; overflow-wrap: anywhere; }
+        }
+        /* 861px - 1180px: los botones bajan a su propia fila. Eso libera ~230px
+           para las columnas de datos, que asi siguen en una sola linea en vez de
+           comprimirse y hacer la fila muy alta. */
+        @media (min-width: 861px) and (max-width: 1180px) {
+            .ryuu-item, .ryuu-item-head { flex-wrap: wrap; row-gap: 8px; height: auto; }
+            .ryuu-item__acciones { flex: 1 1 100%; margin-left: 0; padding-top: 8px; border-top: 1px solid rgba(212,175,55,0.10); }
+            .ryuu-item-head .ryuu-item__acciones { padding-top: 0; border-top: 0; }
+            .ryuu-colorchip__tx { display: none; }
+            .ryuu-colorchip { padding: 3px; }
+        }
+
+        /* Color del equipo: pastilla con muestra, legible incluso si el tono es negro.
+           flex-wrap:nowrap evita que la pastilla se parta en dos lineas ybuat la
+           fila se estire; por debajo de 1181px se queda solo la muestra. */
+        .ryuu-item__specs { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; min-width: 0; }
+        .ryuu-colorchip {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 2px 9px 2px 6px; border-radius: 999px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--ryuu-line, rgba(212,175,55,0.26));
+            font-size: 0.74rem; font-weight: 600; color: var(--ryuu-text, #f2efe6);
+            min-width: 0; overflow: hidden; white-space: nowrap;
+        }
+        .ryuu-colorchip__tx { overflow: hidden; text-overflow: ellipsis; }
+        .ryuu-colorchip__sw {
+            width: 12px; height: 12px; border-radius: 4px; flex: 0 0 auto;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.28), 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        /* Movil: el grid-areas original se respeta; solo se aplana y se compacta. */
+        @media (max-width: 860px) {
+            .ryuu-item {
+                padding: 12px 14px;
+                background: transparent;
+                border: 0;
+                border-bottom: 1px solid var(--ryuu-line, rgba(212,175,55,0.26));
+                border-radius: 0;
+                box-shadow: none;
+            }
+            .ryuu-item:last-child { border-bottom: 0; }
+            .ryuu-item:hover { background: rgba(212,175,55,0.055); box-shadow: none; }
+            .ryuu-item__model { white-space: normal; overflow-wrap: anywhere; }
+            .ryuu-item__imei { overflow-wrap: anywhere; word-break: break-all; }
+            .ryuu-item__costo .v, .ryuu-item__precio .v { white-space: normal; overflow-wrap: anywhere; }
+            .ryuu-item__acciones { justify-content: flex-start; gap: 8px; }
+        }
+
+        /* ---------- Tarjetas de resumen de Accesorios ---------- */
+        .ryuu-acc__stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 4px 0 20px; }
+        .ryuu-acc__stat { display: flex; align-items: center; gap: 12px; background: linear-gradient(135deg, #171717, #141210); border: 1px solid rgba(212,175,55,0.18); border-radius: 14px; padding: 14px 16px; }
+        .ryuu-acc__stat-ico { width: 20px; height: 20px; color: var(--ryuu-gold); flex: 0 0 auto; }
+        .ryuu-acc__stat--gold .ryuu-acc__stat-ico { color: var(--ryuu-gold-light); }
+        .ryuu-acc__stat--low { border-color: rgba(255,123,123,0.32); }
+        .ryuu-acc__stat--low .ryuu-acc__stat-ico { color: #ff9d9d; }
+        .ryuu-acc__stat-k { display: block; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: #938e80; }
+        .ryuu-acc__stat-v { display: block; margin-top: 2px; font-size: 1.25rem; font-weight: 800; color: var(--ryuu-text); line-height: 1.1; }
+        .ryuu-acc__stat--gold .ryuu-acc__stat-v { color: var(--ryuu-gold-light); }
+        .ryuu-acc__stat--low .ryuu-acc__stat-v { color: #ff9d9d; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-900 min-h-screen">
@@ -1455,6 +1569,44 @@
                 if (re.test(qNorm)) return nombre;
             }
             return null;
+        }
+
+        // Punto de color: mapea el texto de color del Sheet a un color visible.
+        // No reemplaza el texto original, solo agrega un indicador al lado.
+        const RYU_COLOR_NEUTRO = '#8b8b8b';
+        const RYU_TONOS_COLOR = {
+            negro: '#1f1f1f',
+            blanco: '#f2f2f2',
+            azul: '#2f6fd0',
+            rojo: '#d0342c',
+            verde: '#2e9e5b',
+            gris: '#7d8590',
+            dorado: '#d4af37',
+            oro: '#d4af37',
+            plateado: '#c9ced6',
+            rosa: '#e2799f',
+            morado: '#7a4fb5',
+            violeta: '#7a4fb5',
+            amarillo: '#e3c33a',
+            naranja: '#e08a2e',
+            'titanio natural': '#b8ab97',
+            grafito: '#4a4a4a',
+            celeste: '#6fc2d8',
+            beige: '#e0d3b8',
+            champagne: '#e3d5b0'
+        };
+        // El orden importa: los tonos mas especificos van primero para que
+        // "titanio natural" no se detecte como "natural"/"gris".
+        const RYU_TONOS_COLOR_ORDENADOS = Object.keys(RYU_TONOS_COLOR);
+
+        function tonoColorCelular(colorTexto) {
+            const q = normalizarBusqueda(colorTexto || '');
+            if (!q) return RYU_COLOR_NEUTRO;
+            for (const token of RYU_TONOS_COLOR_ORDENADOS) {
+                const re = new RegExp(`(^|[^a-z0-9])${escaparRegex(normalizarBusqueda(token))}([^a-z0-9]|$)`);
+                if (re.test(q)) return RYU_TONOS_COLOR[token];
+            }
+            return RYU_COLOR_NEUTRO;
         }
 
         function detalleUnidad(c, nombreModelo) {
@@ -2774,6 +2926,8 @@
 
             const disponibles = useMemo(() => unidades.filter(c => c.estado === 'disponible'), [unidades]);
 
+            // Alimenta tanto el costo de la venta como la ficha visual del equipo
+            // elegido. No altera el valor enviado ni la logica de registrarVenta.
             const unidadSeleccionada = disponibles.find(c => String(c.id) === String(unidadId));
             const accesorioSeleccionado = accesorios.find(a => String(a.id) === String(productoId));
             const regaloSeleccionado = tipo === 'celular' && regalo && regaloAccId
@@ -2847,11 +3001,24 @@
                                         <option value="">-- Elige un celular --</option>
                                         {disponibles.map((c, i) => (
                                             <option key={i} value={c.id}>
-                                                {c.capacidad} / {c.grado} - IMEI: {c.imei} | Ref: {formatoCOP(c.precio_venta_real)}
+                                                {c.modelo_id} · {c.capacidad} · {c.grado} — IMEI {c.imei} · Ref {formatoCOP(c.precio_venta_real)}
                                             </option>
                                         ))}
                                     </select>
                                 </div>
+
+                                {unidadSeleccionada && (
+                                    <div className="ryuu-picked">
+                                        <RYUIcon name="celulares" className="ryuu-picked__ico" />
+                                        <span className="ryuu-picked__txt">
+                                            {unidadSeleccionada.modelo_id} · {unidadSeleccionada.capacidad} · {unidadSeleccionada.grado}
+                                            {' · '}
+                                            <span style={{ color: tonoColorCelular(unidadSeleccionada.color) }}>●</span> {unidadSeleccionada.color || 's/color'}
+                                            {' · IMEI '}{unidadSeleccionada.imei}
+                                        </span>
+                                        <span className="ryuu-picked__bar" />
+                                    </div>
+                                )}
 
                                 <div className="ryuu-field">
                                     <label className="ryuu-label ryuu-checkbox-row">
@@ -2945,6 +3112,10 @@
             const [historialData, setHistorialData] = useState(null);
             const [historialLoading, setHistorialLoading] = useState(false);
             const [historialError, setHistorialError] = useState('');
+            const [editTarget, setEditTarget] = useState(null);
+            const [deleteTarget, setDeleteTarget] = useState(null);
+            const [editForm, setEditForm] = useState({ modelo_id: '', capacidad: '', grado: '', color: '', costo_real: '', precio_venta_real: '' });
+            const [guardando, setGuardando] = useState(false);
 
             const verHistorial = async (imei) => {
                 if (!imei) return;
@@ -2998,6 +3169,75 @@
                 return [...new Set(combinados)];
             }, [modelos]);
 
+            // Un equipo vendido no se edita ni se elimina: el estado y el
+            // historial de la venta deben quedar intactos.
+            const esVendido = (c) => String(c.estado).toLowerCase() === 'vendido';
+
+            const abrirEdit = (c) => {
+                if (esVendido(c)) {
+                    setError('No se puede editar un equipo ya vendido.');
+                    return;
+                }
+                setError('');
+                setEditForm({
+                    modelo_id: c.modelo_id || '',
+                    capacidad: c.capacidad || '',
+                    grado: c.grado || '',
+                    color: c.color || '',
+                    costo_real: c.costo_real !== undefined && c.costo_real !== null ? c.costo_real : '',
+                    precio_venta_real: c.precio_venta_real !== undefined && c.precio_venta_real !== null ? c.precio_venta_real : ''
+                });
+                setEditTarget(c);
+            };
+
+            const handleEdit = async (e) => {
+                e.preventDefault();
+                if (!editTarget) return;
+                setError('');
+                setGuardando(true);
+                try {
+                    await callGAS('editarCelular', {
+                        id: editTarget.id,
+                        modelo_id: editForm.modelo_id,
+                        capacidad: editForm.capacidad,
+                        grado: editForm.grado,
+                        color: editForm.color,
+                        costo_real: Number(editForm.costo_real),
+                        precio_venta_real: Number(editForm.precio_venta_real)
+                    });
+                    setEditTarget(null);
+                    onUpdate();
+                } catch (err) {
+                    setError(err.message);
+                } finally {
+                    setGuardando(false);
+                }
+            };
+
+            const pedirDelete = (c) => {
+                if (esVendido(c)) {
+                    setError('No se puede eliminar un equipo ya vendido.');
+                    return;
+                }
+                setError('');
+                setDeleteTarget(c);
+            };
+
+            const confirmarDelete = async () => {
+                if (!deleteTarget) return;
+                setError('');
+                setGuardando(true);
+                try {
+                    await callGAS('eliminarCelular', { id: deleteTarget.id });
+                    setDeleteTarget(null);
+                    onUpdate();
+                } catch (err) {
+                    setError(err.message);
+                } finally {
+                    setGuardando(false);
+                }
+            };
+
             const handleAdd = async (e) => {
                 e.preventDefault();
                 setError('');
@@ -3045,6 +3285,10 @@
 
             const valorDisponible = unidadesData.reduce((acc, c) =>
                 String(c.estado).toLowerCase() === 'disponible' ? acc + (Number(c.precio_venta_real) || 0) : acc, 0);
+
+            // Dinero realmente invertido: suma del costo de TODAS las unidades,
+            // sin importar si ya se vendieron.
+            const totalInvertido = unidadesData.reduce((acc, c) => acc + (Number(c.costo_real) || 0), 0);
 
             const opcionesModelo = useMemo(() => [...new Set(unidadesData.map(c => c.modelo_id).filter(Boolean))].sort(), [unidadesData]);
             const opcionesCapacidad = useMemo(() => [...new Set(unidadesData.map(c => c.capacidad).filter(Boolean))].sort(), [unidadesData]);
@@ -3136,6 +3380,13 @@
                                 <span className="ryuu-stat__v">{formatoCOP(valorDisponible)}</span>
                             </div>
                         </div>
+                        <div className="ryuu-stat">
+                            <span className="ryuu-stat__ico">📥</span>
+                            <div>
+                                <span className="ryuu-stat__k">Total invertido</span>
+                                <span className="ryuu-stat__v">{formatoCOP(totalInvertido)}</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="ryuu-inv__toolbar">
@@ -3190,7 +3441,7 @@
                         </div>
                     </div>
 
-                    <div className="ryuu-list">
+                    <div className="ryuu-list ryuu-list--flat">
                         <div className="ryuu-item-head">
                             <div className="ryuu-item__equipo">Equipo</div>
                             <div className="ryuu-item__imei">IMEI</div>
@@ -3206,7 +3457,15 @@
                             <div className="ryuu-item" key={i}>
                                 <div className="ryuu-item__equipo">
                                     <span className="ryuu-item__model">{c.modelo_id}</span>
-                                    <span className="ryuu-item__specs">{[c.capacidad, c.color, c.grado].filter(v => v).join(' · ')}</span>
+                                    <span className="ryuu-item__specs">
+                                        <span>{[c.capacidad, c.grado].filter(v => v).join(' · ')}</span>
+                                        {c.color && (
+                                            <span className="ryuu-colorchip" title={c.color}>
+                                                <span className="ryuu-colorchip__sw" style={{ background: tonoColorCelular(c.color) }} />
+                                                <span className="ryuu-colorchip__tx">{c.color}</span>
+                                            </span>
+                                        )}
+                                    </span>
                                 </div>
                                 <div className="ryuu-item__imei">{c.imei}</div>
                                 {hayBateria && <div className="ryuu-item__batt">{renderBateria(c)}</div>}
@@ -3224,9 +3483,8 @@
                                 </div>
                                 <div className="ryuu-item__acciones">
                                     <button onClick={() => verHistorial(c.imei)} className="ryuu-btn ryuu-btn--xs ryuu-btn--edit">Historial</button>
-                                    <button className="ryuu-btn ryuu-btn--xs ryuu-btn--ghost">Editar</button>
-                                    {String(c.estado).toLowerCase() === 'disponible' && <button className="ryuu-btn ryuu-btn--xs ryuu-btn--gold">Vender</button>}
-                                    {esAdmin && <button className="ryuu-btn ryuu-btn--xs ryuu-btn--danger">Eliminar</button>}
+                                    {esAdmin && <button onClick={() => abrirEdit(c)} className="ryuu-btn ryuu-btn--xs ryuu-btn--ghost">Editar</button>}
+                                    {esAdmin && <button onClick={() => pedirDelete(c)} className="ryuu-btn ryuu-btn--xs ryuu-btn--danger">Eliminar</button>}
                                 </div>
                             </div>
                         ))}
@@ -3276,6 +3534,118 @@
                                         <button type="submit" className="ryuu-btn ryuu-btn--gold">Guardar</button>
                                     </div>
                                 </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {editTarget && (
+                        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+                            <div className="ryuu-modal-card">
+                                <h3 className="ryuu-modal-title">Editar Equipo</h3>
+                                <p className="ryuu-modal-sub">
+                                    {editTarget.modelo_id} · IMEI {editTarget.imei}. El IMEI, el estado y el historial no se modifican.
+                                </p>
+                                {error && <div className="ryuu-alert ryuu-alert--error">{error}</div>}
+                                <form onSubmit={handleEdit} className="ryuu-field" style={{ gap: '12px' }}>
+                                    <div className="ryuu-field">
+                                        <label className="ryuu-label">Modelo</label>
+                                        <input
+                                            type="text"
+                                            list="ryuu-lista-modelos-edit"
+                                            value={editForm.modelo_id}
+                                            onChange={e => setEditForm(f => ({ ...f, modelo_id: e.target.value }))}
+                                            required
+                                            className="ryuu-input"
+                                        />
+                                        <datalist id="ryuu-lista-modelos-edit">
+                                            {listaModelosUnica.map((nombre, i) => <option key={i} value={nombre} />)}
+                                        </datalist>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="ryuu-field">
+                                            <label className="ryuu-label">Capacidad</label>
+                                            <input
+                                                type="text"
+                                                value={editForm.capacidad}
+                                                onChange={e => setEditForm(f => ({ ...f, capacidad: e.target.value }))}
+                                                required
+                                                placeholder="128GB"
+                                                className="ryuu-input"
+                                            />
+                                        </div>
+                                        <div className="ryuu-field">
+                                            <label className="ryuu-label">Condición</label>
+                                            <input
+                                                type="text"
+                                                value={editForm.grado}
+                                                onChange={e => setEditForm(f => ({ ...f, grado: e.target.value }))}
+                                                required
+                                                placeholder="A"
+                                                className="ryuu-input"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="ryuu-field">
+                                        <label className="ryuu-label">Color</label>
+                                        <input
+                                            type="text"
+                                            value={editForm.color}
+                                            onChange={e => setEditForm(f => ({ ...f, color: e.target.value }))}
+                                            placeholder="Ej. Negro, Azul, Titanio Natural"
+                                            className="ryuu-input"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="ryuu-field">
+                                            <label className="ryuu-label">Costo (COP)</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                value={editForm.costo_real}
+                                                onChange={e => setEditForm(f => ({ ...f, costo_real: e.target.value }))}
+                                                required
+                                                className="ryuu-input ryuu-num-input"
+                                            />
+                                        </div>
+                                        <div className="ryuu-field">
+                                            <label className="ryuu-label">Precio de venta (COP)</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                value={editForm.precio_venta_real}
+                                                onChange={e => setEditForm(f => ({ ...f, precio_venta_real: e.target.value }))}
+                                                required
+                                                className="ryuu-input ryuu-num-input"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', paddingTop: '4px' }}>
+                                        <button type="button" onClick={() => setEditTarget(null)} className="ryuu-btn ryuu-btn--ghost">Cancelar</button>
+                                        <button type="submit" disabled={guardando} className="ryuu-btn ryuu-btn--gold">{guardando ? 'Guardando…' : 'Guardar cambios'}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {deleteTarget && (
+                        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+                            <div className="ryuu-modal-card">
+                                <h3 className="ryuu-modal-title">Eliminar equipo</h3>
+                                <p className="ryuu-modal-sub">Esta acción quita el equipo del inventario. No se puede deshacer.</p>
+                                {error && <div className="ryuu-alert ryuu-alert--error">{error}</div>}
+                                <div className="ryuu-kv" style={{ display: 'block', marginBottom: '14px' }}>
+                                    <span className="k">Equipo</span>
+                                    <span className="v">{deleteTarget.modelo_id} · {deleteTarget.capacidad} · {deleteTarget.grado}</span>
+                                    <span className="k">IMEI</span>
+                                    <span className="v v--muted">{deleteTarget.imei}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                    <button type="button" onClick={() => setDeleteTarget(null)} className="ryuu-btn ryuu-btn--ghost">Cancelar</button>
+                                    <button type="button" onClick={confirmarDelete} disabled={guardando} className="ryuu-btn ryuu-btn--danger">{guardando ? 'Eliminando…' : 'Sí, eliminar'}</button>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -3336,6 +3706,87 @@
         function VistaAccesorios({ accesorios, esAdmin, callGAS, onUpdate }) {
             const [showModal, setShowModal] = useState(false);
             const [error, setError] = useState('');
+            const [editTarget, setEditTarget] = useState(null);
+            const [ajusteTarget, setAjusteTarget] = useState(null);
+            const [ajusteOp, setAjusteOp] = useState('agregar');
+            const [ajusteCant, setAjusteCant] = useState('1');
+            const [ajusteForm, setAjusteForm] = useState({ nombre: '', costo: '', precio_recomendado: '' });
+            const [guardando, setGuardando] = useState(false);
+
+            // Resumen del inventario de accesorios.
+            const totalUnidades = (accesorios || []).reduce((acc, a) => acc + (Number(a.stock) || 0), 0);
+            const valorInventario = (accesorios || []).reduce((acc, a) => acc + (Number(a.costo) || 0) * (Number(a.stock) || 0), 0);
+            const stockBajo = (accesorios || []).filter(a => Number(a.stock) <= 3).length;
+
+            // Reutiliza guardarAccesorio pasando el id: el backend actualiza la
+            // fila existente, no crea una nueva.
+            const guardarDesdeForm = async (payload) => {
+                setGuardando(true);
+                try {
+                    await callGAS('guardarAccesorio', payload);
+                    onUpdate();
+                    return true;
+                } catch (err) {
+                    setError(err.message);
+                    return false;
+                } finally {
+                    setGuardando(false);
+                }
+            };
+
+            const abrirEdit = (a) => {
+                setError('');
+                setAjusteTarget(null);
+                setAjusteForm({ nombre: a.nombre || '', costo: a.costo !== undefined ? a.costo : '', precio_recomendado: a.precio_recomendado !== undefined ? a.precio_recomendado : '' });
+                setEditTarget(a);
+            };
+
+            const handleEdit = async (e) => {
+                e.preventDefault();
+                if (!editTarget) return;
+                setError('');
+                const ok = await guardarDesdeForm({
+                    id: editTarget.id,
+                    nombre: ajusteForm.nombre,
+                    costo: Number(ajusteForm.costo),
+                    precio_recomendado: Number(ajusteForm.precio_recomendado),
+                    stock: Number(editTarget.stock) || 0
+                });
+                if (ok) setEditTarget(null);
+            };
+
+            const abrirAjuste = (a) => {
+                setError('');
+                setEditTarget(null);
+                setAjusteOp('agregar');
+                setAjusteCant('1');
+                setAjusteTarget(a);
+            };
+
+            const handleAjuste = async (e) => {
+                e.preventDefault();
+                if (!ajusteTarget) return;
+                setError('');
+                const cantidad = Number(ajusteCant);
+                if (!isFinite(cantidad) || cantidad <= 0) {
+                    setError('Ingresa una cantidad mayor a 0.');
+                    return;
+                }
+                const stockActual = Number(ajusteTarget.stock) || 0;
+                const nuevoStock = ajusteOp === 'agregar' ? stockActual + cantidad : stockActual - cantidad;
+                if (nuevoStock < 0) {
+                    setError('El stock no puede quedar negativo.');
+                    return;
+                }
+                const ok = await guardarDesdeForm({
+                    id: ajusteTarget.id,
+                    nombre: ajusteTarget.nombre,
+                    costo: Number(ajusteTarget.costo) || 0,
+                    precio_recomendado: Number(ajusteTarget.precio_recomendado) || 0,
+                    stock: nuevoStock
+                });
+                if (ok) setAjusteTarget(null);
+            };
 
             const handleAdd = async (e) => {
                 e.preventDefault();
@@ -3358,6 +3809,37 @@
 
             return (
                 <div className="space-y-4">
+                    <div className="ryuu-acc__stats">
+                        <div className="ryuu-acc__stat">
+                            <RYUIcon name="accesorios" className="ryuu-acc__stat-ico" />
+                            <div>
+                                <span className="ryuu-acc__stat-k">Accesorios</span>
+                                <span className="ryuu-acc__stat-v">{(accesorios || []).length}</span>
+                            </div>
+                        </div>
+                        <div className="ryuu-acc__stat">
+                            <RYUIcon name="resumen" className="ryuu-acc__stat-ico" />
+                            <div>
+                                <span className="ryuu-acc__stat-k">Unidades en stock</span>
+                                <span className="ryuu-acc__stat-v">{totalUnidades}</span>
+                            </div>
+                        </div>
+                        <div className="ryuu-acc__stat ryuu-acc__stat--gold">
+                            <RYUIcon name="ventas" className="ryuu-acc__stat-ico" />
+                            <div>
+                                <span className="ryuu-acc__stat-k">Valor en inventario</span>
+                                <span className="ryuu-acc__stat-v">{formatoCOP(valorInventario)}</span>
+                            </div>
+                        </div>
+                        <div className={`ryuu-acc__stat ${stockBajo > 0 ? 'ryuu-acc__stat--low' : ''}`}>
+                            <RYUIcon name="calendario" className="ryuu-acc__stat-ico" />
+                            <div>
+                                <span className="ryuu-acc__stat-k">Stock bajo</span>
+                                <span className="ryuu-acc__stat-v">{stockBajo}</span>
+                            </div>
+                        </div>
+                    </div>
+
                     {esAdmin && (
                         <div className="flex justify-end">
                             <button onClick={() => setShowModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">+ Agregar Accesorio</button>
@@ -3372,6 +3854,7 @@
                                     <th className="p-3">Costo</th>
                                     <th className="p-3">Precio Recomendado</th>
                                     <th className="p-3">Stock</th>
+                                    {esAdmin && <th className="p-3">Acciones</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
@@ -3383,11 +3866,82 @@
                                         <td className="p-3">
                                             <span className={`px-2 py-0.5 rounded text-xs ${Number(a.stock) <= 3 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-700'}`}>{a.stock}</span>
                                         </td>
+                                        {esAdmin && (
+                                            <td className="p-3">
+                                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                                    <button onClick={() => abrirEdit(a)} className="ryuu-btn ryuu-btn--xs ryuu-btn--edit">Editar</button>
+                                                    <button onClick={() => abrirAjuste(a)} className="ryuu-btn ryuu-btn--xs ryuu-btn--ghost">Ajustar stock</button>
+                                                </div>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
+
+                    {editTarget && (
+                        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+                            <div className="ryuu-modal-card">
+                                <h3 className="ryuu-modal-title">Editar Accesorio</h3>
+                                <p className="ryuu-modal-sub">Nombre, costo y precio recomendado. El stock se cambia desde "Ajustar stock".</p>
+                                {error && <div className="ryuu-alert ryuu-alert--error">{error}</div>}
+                                <form onSubmit={handleEdit} className="ryuu-field" style={{ gap: '12px' }}>
+                                    <div className="ryuu-field">
+                                        <label className="ryuu-label">Nombre</label>
+                                        <input type="text" value={ajusteForm.nombre} onChange={e => setAjusteForm(f => ({ ...f, nombre: e.target.value }))} required className="ryuu-input" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="ryuu-field">
+                                            <label className="ryuu-label">Costo</label>
+                                            <input type="number" step="0.01" min="0" value={ajusteForm.costo} onChange={e => setAjusteForm(f => ({ ...f, costo: e.target.value }))} required className="ryuu-input ryuu-num-input" />
+                                        </div>
+                                        <div className="ryuu-field">
+                                            <label className="ryuu-label">Precio recomendado</label>
+                                            <input type="number" step="0.01" min="0" value={ajusteForm.precio_recomendado} onChange={e => setAjusteForm(f => ({ ...f, precio_recomendado: e.target.value }))} required className="ryuu-input ryuu-num-input" />
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', paddingTop: '4px' }}>
+                                        <button type="button" onClick={() => setEditTarget(null)} className="ryuu-btn ryuu-btn--ghost">Cancelar</button>
+                                        <button type="submit" disabled={guardando} className="ryuu-btn ryuu-btn--gold">{guardando ? 'Guardando…' : 'Guardar cambios'}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {ajusteTarget && (
+                        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+                            <div className="ryuu-modal-card">
+                                <h3 className="ryuu-modal-title">Ajustar stock</h3>
+                                <p className="ryuu-modal-sub">{ajusteTarget.nombre} · stock actual: {ajusteTarget.stock}</p>
+                                {error && <div className="ryuu-alert ryuu-alert--error">{error}</div>}
+                                <form onSubmit={handleAjuste} className="ryuu-field" style={{ gap: '12px' }}>
+                                    <div className="ryuu-field">
+                                        <label className="ryuu-label">Operación</label>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <label className="ryuu-label ryuu-checkbox-row">
+                                                <input type="radio" name="operacion" value="agregar" checked={ajusteOp === 'agregar'} onChange={() => setAjusteOp('agregar')} className="ryuu-checkbox" />
+                                                <span>Agregar</span>
+                                            </label>
+                                            <label className="ryuu-label ryuu-checkbox-row">
+                                                <input type="radio" name="operacion" value="disminuir" checked={ajusteOp === 'disminuir'} onChange={() => setAjusteOp('disminuir')} className="ryuu-checkbox" />
+                                                <span>Disminuir</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div className="ryuu-field">
+                                        <label className="ryuu-label">Cantidad</label>
+                                        <input type="number" min="1" step="1" value={ajusteCant} onChange={e => setAjusteCant(e.target.value)} required className="ryuu-input ryuu-num-input" />
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', paddingTop: '4px' }}>
+                                        <button type="button" onClick={() => setAjusteTarget(null)} className="ryuu-btn ryuu-btn--ghost">Cancelar</button>
+                                        <button type="submit" disabled={guardando} className="ryuu-btn ryuu-btn--gold">{guardando ? 'Aplicando…' : 'Aplicar'}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
 
                     {showModal && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

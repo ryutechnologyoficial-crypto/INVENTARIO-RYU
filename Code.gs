@@ -89,6 +89,14 @@ function handleRequest(e) {
         result.data = agregarCelular(ss, params);
         break;
 
+      case 'editarCelular':
+        result.data = editarCelular(ss, params);
+        break;
+
+      case 'eliminarCelular':
+        result.data = eliminarCelular(ss, params);
+        break;
+
       case 'guardarAccesorio':
         result.data = guardarAccesorio(ss, params);
         break;
@@ -369,7 +377,7 @@ function validateUserAuth(ss, userId, action) {
   const user = usuarios.find(u => String(u.id) === String(userId));
   if (!user) throw new Error('Usuario no encontrado o sesión inválida.');
 
-  const adminActions = ['anularVenta', 'editarVenta', 'editarReferenciaRetoma', 'actualizarTasa', 'agregarModelo', 'agregarReferenciaRetoma', 'crearEmpleado', 'agregarCelular', 'guardarAccesorio', 'sembrarCatalogo'];
+  const adminActions = ['anularVenta', 'editarVenta', 'editarReferenciaRetoma', 'actualizarTasa', 'agregarModelo', 'agregarReferenciaRetoma', 'crearEmpleado', 'agregarCelular', 'editarCelular', 'eliminarCelular', 'guardarAccesorio', 'sembrarCatalogo'];
 
   if (adminActions.includes(action) && user.rol !== 'admin') {
     throw new Error('Acceso denegado: el rol de vendedor no tiene permisos para ejecutar esta acción.');
@@ -645,6 +653,100 @@ function agregarCelular(ss, params) {
     'Ingreso: ' + [params.modelo_id, params.capacidad, params.grado, params.color].filter(Boolean).join(' / '));
 
   return { success: true };
+}
+
+// Actualiza una unidad existente del inventario (busca la fila por su id,
+// nunca inserta una nueva). Cada columna se localiza por NOMBRE de encabezado,
+// no por posición, para no depender del orden actual de las columnas.
+// No escribe id, imei, fecha_ingreso ni estado: el estado actual se conserva
+// y el historial existente no se modifica (solo se agrega un movimiento nuevo).
+function editarCelular(ss, params) {
+  if (!params.id) throw new Error('Falta el identificador del celular.');
+
+  const sheet = ss.getSheetByName('UnidadesCelular');
+  const unidades = getSheetData(ss, 'UnidadesCelular');
+  const actual = unidades.find(u => String(u.id) === String(params.id));
+  if (!actual) throw new Error('Celular no encontrado en el inventario.');
+
+  const modeloId = String(params.modelo_id || '').trim();
+  if (!modeloId) throw new Error('El modelo es obligatorio.');
+
+  const capacidad = String(params.capacidad || '').trim();
+  const grado = String(params.grado || '').trim();
+  if (!capacidad) throw new Error('La capacidad es obligatoria.');
+  if (!grado) throw new Error('El grado es obligatorio.');
+
+  const costo = Number(params.costo_real);
+  const precio = Number(params.precio_venta_real);
+  if (!isFinite(costo) || costo < 0) throw new Error('El costo debe ser un número válido mayor o igual a 0.');
+  if (!isFinite(precio) || precio < 0) throw new Error('El precio de venta debe ser un número válido mayor o igual a 0.');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0].map(h => String(h).trim().toLowerCase());
+  const col = (name) => headers.indexOf(name) + 1;
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) !== String(params.id)) continue;
+
+    const rowIndex = i + 1;
+    const cambios = [];
+    const set = (nombre, valor) => {
+      const idx = col(nombre);
+      if (!idx) return;
+      const previo = rows[i][idx - 1];
+      const previoTxt = previo === null || previo === undefined ? '' : String(previo);
+      const valorTxt = valor === null || valor === undefined ? '' : String(valor);
+      if (previoTxt === valorTxt) return;
+      cambios.push(nombre + ': ' + previoTxt + ' → ' + valorTxt);
+      sheet.getRange(rowIndex, idx).setValue(valor);
+    };
+
+    set('modelo_id', modeloId);
+    set('capacidad', capacidad);
+    set('grado', grado);
+    set('color', String(params.color || '').trim());
+    set('costo_real', costo);
+    set('precio_venta_real', precio);
+
+    registrarHistorialIMEI(ss, actual.imei, 'edicion', params.userId || params.vendedor_id,
+      'Edición de inventario' + (cambios.length ? ': ' + cambios.join(' | ') : ' (sin cambios)'));
+
+    return { success: true };
+  }
+
+  throw new Error('Celular no encontrado en el inventario.');
+}
+
+// Elimina una unidad del inventario (busca la fila por su id).
+// Respeta las reglas del sistema: no borra equipos vendidos ni equipos que
+// tengan ventas registradas, y tampoco altera el historial previo.
+function eliminarCelular(ss, params) {
+  if (!params.id) throw new Error('Falta el identificador del celular.');
+
+  const sheet = ss.getSheetByName('UnidadesCelular');
+  const unidades = getSheetData(ss, 'UnidadesCelular');
+  const actual = unidades.find(u => String(u.id) === String(params.id));
+  if (!actual) throw new Error('Celular no encontrado en el inventario.');
+
+  if (String(actual.estado || '').toLowerCase() === 'vendido') {
+    throw new Error('Este equipo está vendido y tiene historial de venta: no se puede eliminar.');
+  }
+
+  const ventasVinculadas = getSheetData(ss, 'Ventas').filter(v => String(v.unidad_id) === String(actual.id));
+  if (ventasVinculadas.length > 0) {
+    throw new Error('Este equipo tiene ventas registradas: no se puede eliminar.');
+  }
+
+  const rows = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) !== String(params.id)) continue;
+    sheet.deleteRow(i + 1);
+    registrarHistorialIMEI(ss, actual.imei, 'eliminacion', params.userId || params.vendedor_id,
+      'Equipo eliminado del inventario: ' + [actual.modelo_id, actual.capacidad, actual.color].filter(Boolean).join(' / '));
+    return { success: true };
+  }
+
+  throw new Error('Celular no encontrado en el inventario.');
 }
 
 function guardarAccesorio(ss, params) {
